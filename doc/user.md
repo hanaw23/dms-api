@@ -20,7 +20,6 @@ Response Body (201: Success):
 ```json
 {
   "data": {
-    "userId": 1,
     "username": "Hana Widyatari",
     "name": "hanaw",
     "role": "admin"
@@ -54,7 +53,6 @@ Response Body (201: Success):
 ```json
 {
   "data": {
-    "userId": 1,
     "username": "Hana Widyatari",
     "name": "hanaw",
     "token": "session_id_generated"
@@ -83,7 +81,6 @@ Response Body (200: Success):
 ```json
 {
   "data": {
-    "userId": 1,
     "username": "Hana Widyatari",
     "name": "hanaw",
     "role": "admin"
@@ -121,7 +118,6 @@ Response Body (201: Success):
 ```json
 {
   "data": {
-    "userId": 1,
     "username": "Hana Widyatari",
     "name": "hanaw",
     "role": "admin"
@@ -188,8 +184,8 @@ Response Body if role is User (200: Success):
 ```json
 {
   "data": [
-    { "userId": 1, "username": "Hana Widyatari", "name": "hanaw" },
-    { "userId": 2, "username": "hai", "name": "helow" }
+    { "username": "Hana Widyatari", "name": "hanaw" },
+    { "username": "hai", "name": "helow" }
   ],
   "paging": {
     "current_page": 1,
