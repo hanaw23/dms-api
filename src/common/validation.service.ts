@@ -3,7 +3,7 @@ import { ZodType } from 'zod';
 
 @Injectable()
 export class ValidationService {
-  validate<T>(zodType: ZodType<T>, data: T): T {
-    return zodType.parse(data);
+  validate<T>(schema: ZodType<T>, data: T): T {
+    return schema.parse(data); // Ini akan throw ZodError jika invalid
   }
 }

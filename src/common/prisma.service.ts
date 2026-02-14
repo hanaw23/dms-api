@@ -1,5 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { Logger } from 'winston';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
@@ -11,7 +13,13 @@ export class PrismaService
   constructor(
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {
+    // Setup PostgreSQL adapter untuk Prisma v7
+    const connectionString = process.env.DATABASE_URL;
+    const pool = new Pool({ connectionString });
+    const adapter = new PrismaPg(pool);
+
     super({
+      adapter,
       log: [
         {
           emit: 'event',
@@ -33,7 +41,9 @@ export class PrismaService
     });
   }
 
-  OnModuleInit() {
+  async onModuleInit() {
+    await this.$connect();
+
     this.$on('query', (e) => {
       this.logger.info(e);
     });
