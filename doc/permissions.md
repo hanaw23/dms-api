@@ -12,9 +12,9 @@ Request Body:
 
 ```json
 {
-  "userId": 1,
+  "username": 1,
   "documentId": 1,
-  "adminId": 3,
+  "admin_name": 3,
   "is_replace": true, // true apabila untuk replace optional
   "is_remove": false // true apabila untuk remove optional
 }
@@ -26,11 +26,8 @@ Response Body (201: Success):
 {
   "data": {
     "id": 1,
-    "userId": 1,
-    "documentId": 1,
-    "adminId": 3,
-    "userName": "user_1",
-    "adminName": "admin_1",
+    "username": "user_1",
+    "admin_name": "admin_1",
     "is_replace": true,
     "is_remove": false
   }
@@ -67,8 +64,7 @@ Response Body (201: Success):
     {
       "id": 1,
       "documentId": 1,
-      "userId": 1,
-      "userName": "user_1",
+      "username": "user_1",
       "is_replace": true,
       "is_remove": false
     }
@@ -101,7 +97,7 @@ Request Body:
 
 ```json
 {
-  "userId": 1,
+  "username": "hana",
   "documentId": 1,
   "is_replace": true, // true apabila untuk replace optional
   "is_remove": true // true apabila untuk remove optional
@@ -114,11 +110,9 @@ Response Body (201: Success):
 {
   "data": {
     "id": 1,
-    "userId": 1,
     "documentId": 1,
-    "adminId": 3,
-    "userName": "user_1",
-    "adminName": "admin_1",
+    "admin_name": "admin",
+    "username": "user_1",
     "is_replace": true,
     "is_remove": true
   }
