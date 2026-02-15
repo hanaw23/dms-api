@@ -5,6 +5,10 @@ import { LoginDto } from './dto/login.dto';
 import { omit } from 'lodash';
 import { compare } from 'bcrypt';
 import { JwtConfig } from 'src/jwt.config';
+import { plainToClass } from 'class-transformer';
+import { UserResponseDto } from './dto/user.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ApiResponseDto } from 'src/common/dto/api-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +22,7 @@ export class AuthService {
    * @param dto
    * @returns
    */
-  async register(dto: any) {
+  async register(dto: RegisterDto) {
     const user = await this.dbService.users.findFirst({
       where: {
         username: dto.username,
@@ -34,10 +38,7 @@ export class AuthService {
     });
 
     if (createUser) {
-      return {
-        statusCode: 200,
-        message: 'Register success',
-      };
+      return new ApiResponseDto(201, 'Register success', null);
     }
 
     throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
@@ -63,19 +64,52 @@ export class AuthService {
       throw new HttpException('Credential Incorrect', HttpStatus.UNAUTHORIZED);
     }
 
-    return await this.generateJwt(
-      user.id,
-      user.username,
-      user,
-      JwtConfig.user_secret,
-      JwtConfig.user_expired,
+    const accessToken = this.jwtService.sign(
+      {
+        sub: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+      },
+      {
+        expiresIn: JwtConfig.user_expired,
+        secret: JwtConfig.user_secret,
+      },
     );
+
+    const userData = omit(user, ['password', 'created_at', 'updated_at']);
+
+    return new ApiResponseDto(200, 'Login success', {
+      accessToken,
+      user: userData,
+    });
   }
 
   /**
-   * Generate JWT
+   * Get User Profile
    * @param userId
-   * @param username
+   * @returns
+   */
+  async getProfile(userId: number): Promise<ApiResponseDto<UserResponseDto>> {
+    const user = await this.dbService.users.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const userDto = plainToClass(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
+
+    return new ApiResponseDto(200, 'Profile retrieved successfully', userDto);
+  }
+
+  /**
+   * Generate JWT (jika masih diperlukan untuk keperluan lain)
+   * @param userId
+   * @param email
    * @param user
    * @param secret
    * @param expired
@@ -101,10 +135,9 @@ export class AuthService {
       },
     );
 
-    return {
-      statusCode: 200,
-      accessToken: accessToken,
+    return new ApiResponseDto(200, 'Token generated', {
+      accessToken,
       user: omit(user, ['password', 'created_at', 'updated_at']),
-    };
+    });
   }
 }
