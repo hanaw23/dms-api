@@ -6,7 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "npx nest build",
+    "vercel-build": "npx nest build && npx prisma generate",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -17,9 +18,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "postinstall": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
-    "vercel-build": "npm run build"
+    "postinstall": "npx prisma generate",
+    "prisma:migrate": "prisma migrate deploy"
   },
   "engines": {
     "node": ">=18.0.0",
