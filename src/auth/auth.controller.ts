@@ -1,60 +1,70 @@
 import {
-  Body,
   Controller,
   Get,
-  HttpCode,
   Post,
+  Body,
   UseGuards,
+  Request,
   UsePipes,
   ValidationPipe,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { TransformPasswordPipe } from './transform-password.pipe';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth/jwt-auth.guard';
-import { TransformPasswordPipe } from './transform-password.pipe';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiResponseDto } from 'src/common/dto/api-response.dto';
+import { UserResponseDto } from './dto/user.dto';
+import { RegisterDto } from './dto/register.dto';
 
-@ApiTags('Auth')
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  /**
-   * Constructor
-   * @param authService
-   */
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
-  /**
-   * Register controller
-   * @param dto
-   * @returns
-   */
   @UsePipes(ValidationPipe, TransformPasswordPipe)
-  @HttpCode(201)
   @Post('register')
+  @ApiOperation({ summary: 'Register new user' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 400, description: 'User already exists' })
   async register(@Body() dto: RegisterDto) {
-    return await this.authService.register(dto);
+    return this.authService.register(dto);
   }
 
-  /**
-   * Login Controller
-   * @param dto
-   * @returns
-   */
-  @HttpCode(201)
   @Post('login')
+  @ApiOperation({ summary: 'User login' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
   async login(@Body() dto: LoginDto) {
-    return await this.authService.login(dto);
+    return this.authService.login(dto);
   }
 
   /**
-   * Get detail User
+   * Get detail User with JWT token
    */
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('profile')
-  async profile() {
-    return {
-      message: 'Profile',
-    };
+  @ApiOperation({ summary: 'Get user profile (requires JWT token)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile retrieved successfully',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async profile(@Request() req): Promise<ApiResponseDto<UserResponseDto>> {
+    console.log('req.user:', req.user); // Debug log
+
+    if (!req.user || !req.user.sub) {
+      throw new HttpException('Invalid token payload', HttpStatus.UNAUTHORIZED);
+    }
+
+    return this.authService.getProfile(req.user.sub);
   }
 }

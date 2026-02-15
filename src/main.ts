@@ -1,18 +1,34 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Validation Pipe
+  app.useGlobalPipes(new ValidationPipe());
+
+  // Swagger Configuration
   const config = new DocumentBuilder()
-    .setTitle('Open API Test Dansmultipro')
-    .setDescription('API Test Dansmultipro')
+    .setTitle('API Documentation')
+    .setDescription('API Documentation for Your App')
     .setVersion('1.0')
-    .addTag('dansmultipro')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('openapi', app, document);
+  SwaggerModule.setup('api-docs', app, document);
 
   const cors = {
     origin: ['http://localhost:3000', 'http://localhost', '*'],
