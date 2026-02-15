@@ -1,6 +1,5 @@
 const getJwtSecret = (): string => {
-  const secret =
-    process.env.JWT_SECRET || '7Myh9rN0y9PCrFYMVeuZCiGDLsISWkezBMI7adli877=';
+  const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error('JWT_SECRET is not defined in .env file');
   }
