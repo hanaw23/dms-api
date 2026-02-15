@@ -13,7 +13,7 @@ import { PaginatedResponseDto } from './common/dto/paginated-response.dto';
 import { PaginationDto } from './common/dto/api-pagination.dto';
 import { RegisterDto } from './auth/dto/register.dto';
 import { LoginDto } from './auth/dto/login.dto';
-import { UserResponseDto } from './auth/dto/user.dto';
+import { UserResponseDto, UserAdminResponseDto } from './auth/dto/user.dto';
 import { CreatePermissionRequestDto } from './permission-requests/dto/create-permission-request.dto';
 import { UpdatePermissionRequestDto } from './permission-requests/dto/update-permission-request.dto';
 import { PermissionRequestResponseDto } from './permission-requests/dto/permission-request-response.dto';
@@ -69,6 +69,7 @@ async function bootstrap() {
       RegisterDto,
       LoginDto,
       UserResponseDto,
+      UserAdminResponseDto,
       CreatePermissionRequestDto,
       UpdatePermissionRequestDto,
       PermissionRequestResponseDto,

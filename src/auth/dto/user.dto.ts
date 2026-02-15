@@ -30,3 +30,17 @@ export class UserResponseDto {
   @Exclude()
   password: string;
 }
+
+export class UserAdminResponseDto {
+  @ApiProperty({ example: 1 })
+  @Expose()
+  id: number;
+
+  @ApiProperty({ example: 'John Doe' })
+  @Expose()
+  name: string;
+
+  @ApiProperty({ example: 'john_doe' })
+  @Expose()
+  username: string;
+}

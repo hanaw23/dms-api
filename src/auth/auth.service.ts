@@ -1,14 +1,20 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { omit } from 'lodash';
 import { compare } from 'bcrypt';
 import { JwtConfig } from 'src/jwt.config';
 import { plainToClass } from 'class-transformer';
-import { UserResponseDto } from './dto/user.dto';
+import { UserResponseDto, UserAdminResponseDto } from './dto/user.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ApiResponseDto } from 'src/common/dto/api-response.dto';
+import { PaginationDto } from 'src/common/dto/api-pagination.dto';
+import {
+  PaginatedResponseDto,
+  PaginationMeta,
+} from 'src/common/dto/paginated-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -104,6 +110,60 @@ export class AuthService {
     });
 
     return new ApiResponseDto(200, 'Profile retrieved successfully', userDto);
+  }
+
+  /**
+   * Get All Users only role Admin
+   * @returns
+   */
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResponseDto<UserAdminResponseDto>> {
+    const { page = 1, limit = 10, search } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      role: UserRole.ADMIN,
+    };
+
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
+
+    const total = await this.dbService.users.count({ where });
+    const admins = await this.dbService.users.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    // Transform pakai plainToClass
+    const requestsDto = admins.map((req) =>
+      plainToClass(UserAdminResponseDto, req, {
+        excludeExtraneousValues: true,
+      }),
+    );
+
+    const totalPages = Math.ceil(total / limit);
+    const meta: PaginationMeta = {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    };
+
+    return new PaginatedResponseDto(
+      200,
+      'Permission requests berhasil diambil',
+      requestsDto,
+      meta,
+    );
   }
 
   /**
