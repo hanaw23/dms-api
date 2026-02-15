@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { DocumentsModule } from './documents/documents.module';
+import { PermissionRequestsModule } from './permission-requests/permission-requests.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { DocumentsModule } from './documents/documents.module';
     PrismaModule,
     AuthModule,
     DocumentsModule,
+    PermissionRequestsModule,
   ],
   controllers: [],
   providers: [],
