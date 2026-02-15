@@ -17,14 +17,38 @@ enum UserRole {
   USER
 }
 
-model users {
-  id         Int       @id @default(autoincrement())
-  name       String    @db.VarChar(100)
-  username   String    @unique(map: "username_UNIQUE") @db.VarChar(100)
-  password   String    @db.VarChar(200)
-  role       UserRole  @default(USER)
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  updated_at DateTime? @updatedAt @db.Timestamp(6)
+enum DocumentStatus {
+  uploaded
+  pending_replace
+  pending_remove
+}
+
+model Users {
+  id         Int         @id @default(autoincrement())
+  name       String
+  username   String      @unique
+  password   String
+  role       UserRole
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+  documents  Documents[]
 
   @@map("users")
+}
+
+model Documents {
+  id                    Int            @id @default(autoincrement())
+  name_doc              String
+  url_doc               String
+  status                DocumentStatus @default(uploaded)
+  is_remove_permission  Boolean        @default(false)
+  is_replace_permission Boolean        @default(false)
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+  created_by            String
+  updated_by            String?
+  user_id               Int
+  user                  Users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("documents")
 }

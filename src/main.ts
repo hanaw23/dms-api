@@ -2,12 +2,39 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { CreateDocumentDto } from './documents/dto/create-document.dto';
+import { UpdateDocumentDto } from './documents/dto/update-document.dto';
+import { UpdateStatusDto } from './documents/dto/update-status.dto';
+import { DocumentResponseDto } from './documents/dto/document-response.dto';
+import { ApiResponseDto } from './common/dto/api-response.dto';
+import { PaginatedResponseDto } from './common/dto/paginated-response.dto';
+import { PaginationDto } from './common/dto/api-pagination.dto';
+import { RegisterDto } from './auth/dto/register.dto';
+import { LoginDto } from './auth/dto/login.dto';
+import { UserResponseDto } from './auth/dto/user.dto';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Validation Pipe
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  // Static Files
+  const uploadsPath = join(process.cwd(), 'uploads');
+  console.log('📂 Serving static files from:', uploadsPath);
+
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/uploads/',
+  });
 
   // Swagger Configuration
   const config = new DocumentBuilder()
@@ -27,7 +54,20 @@ async function bootstrap() {
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config, {
+    extraModels: [
+      CreateDocumentDto,
+      UpdateDocumentDto,
+      UpdateStatusDto,
+      DocumentResponseDto,
+      ApiResponseDto,
+      PaginatedResponseDto,
+      PaginationDto,
+      RegisterDto,
+      LoginDto,
+      UserResponseDto,
+    ],
+  });
   SwaggerModule.setup('api-docs', app, document);
 
   const cors = {
