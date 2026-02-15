@@ -33,7 +33,6 @@ async function bootstrap() {
 
   // Static Files
   const uploadsPath = join(process.cwd(), 'uploads');
-  console.log('📂 Serving static files from:', uploadsPath);
 
   app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',

@@ -5,8 +5,21 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  // Root endpoint - info API
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getApiInfo() {
+    return this.appService.getApiInfo();
+  }
+
+  // Health check simple (untuk UptimeRobot)
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
+
+  // Health check detail (untuk monitoring)
+  @Get('health/detailed')
+  async detailedHealthCheck() {
+    return await this.appService.getHealthStatus();
   }
 }
