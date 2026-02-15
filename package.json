@@ -19,7 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "vercel-build": "nest build && prisma generate"
+    "vercel-build": "npm run build && npx prisma generate"
   },
   "engines": {
     "node": ">=18.0.0",
