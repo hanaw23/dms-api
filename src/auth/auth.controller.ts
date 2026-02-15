@@ -9,20 +9,24 @@ import {
   ValidationPipe,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { TransformPasswordPipe } from './transform-password.pipe';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth/jwt-auth.guard';
 import { ApiResponseDto } from 'src/common/dto/api-response.dto';
-import { UserResponseDto } from './dto/user.dto';
+import { UserResponseDto, UserAdminResponseDto } from './dto/user.dto';
 import { RegisterDto } from './dto/register.dto';
+import { PaginationDto } from 'src/common/dto/api-pagination.dto';
+import { PaginatedResponseDto } from 'src/common/dto/paginated-response.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -66,5 +70,33 @@ export class AuthController {
     }
 
     return this.authService.getProfile(req.user.sub);
+  }
+
+  @Get('admins')
+  @ApiOperation({ summary: 'Get all admins with pagination and search' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Halaman ke-',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Jumlah data per halaman',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'Admin 1',
+    description: 'Cari berdasarkan nama admin',
+  })
+  @ApiResponse({ status: 200, description: 'Admin berhasil diambil' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResponseDto<UserAdminResponseDto>> {
+    return this.authService.findAll(paginationDto);
   }
 }

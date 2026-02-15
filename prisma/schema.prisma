@@ -21,6 +21,21 @@ enum DocumentStatus {
   uploaded
   pending_replace
   pending_remove
+  approved_replace
+  approved_remove
+  rejected_replace
+  rejected_remove
+}
+
+enum PermissionStatus {
+  ONREVIEW
+  APPROVED
+  REJECTED
+}
+
+enum RequestType {
+  REPLACE
+  REMOVE
 }
 
 model Users {
@@ -32,6 +47,8 @@ model Users {
   created_at DateTime    @default(now())
   updated_at DateTime    @updatedAt
   documents  Documents[]
+  userRequests  PermissionRequests[] @relation("UserRequests")
+  adminRequests PermissionRequests[] @relation("AdminRequests")
 
   @@map("users")
 }
@@ -49,6 +66,26 @@ model Documents {
   updated_by            String?
   user_id               Int
   user                  Users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  permissionRequests    PermissionRequests[]
 
   @@map("documents")
+}
+
+model PermissionRequests {
+  id                Int              @id @default(autoincrement())
+  document_id       Int
+  document          Documents        @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  user_id           Int
+  user              Users            @relation("UserRequests", fields: [user_id], references: [id], onDelete: Cascade)
+  admin_id          Int
+  admin             Users            @relation("AdminRequests", fields: [admin_id], references: [id], onDelete: Cascade)
+  request_type      RequestType      // REPLACE atau REMOVE
+  status_permission PermissionStatus @default(ONREVIEW)
+  message           String?          // Optional message dari user
+  admin_note        String?          // Optional note dari admin saat approve/reject
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+  reviewed_at       DateTime?        // Kapan admin review
+
+  @@map("permission_requests")
 }
