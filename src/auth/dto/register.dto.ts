@@ -2,7 +2,7 @@ import { Prisma, UserRole } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MinLength, IsEnum } from 'class-validator';
 
-export class RegisterDto implements Prisma.usersCreateInput {
+export class RegisterDto implements Prisma.UsersCreateInput {
   @ApiProperty({ example: 'John Doe' })
   @IsNotEmpty()
   @IsString()
@@ -19,7 +19,7 @@ export class RegisterDto implements Prisma.usersCreateInput {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ example: 'user', enum: UserRole })
+  @ApiProperty({ example: 'USER', enum: UserRole })
   @IsNotEmpty()
   @IsEnum(UserRole)
   role: UserRole;
