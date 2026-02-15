@@ -1,37 +1,50 @@
-import 'tsconfig-paths/register';
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from '../dist/app.module';
 import express from 'express';
 
 const server = express();
-let app: any;
+let cachedApp = null;
 
 async function bootstrap() {
-  if (!app) {
-    const nestApp = await NestFactory.create(
+  if (cachedApp) {
+    return cachedApp;
+  }
+
+  try {
+    // Dynamic import untuk handle path issue
+    const { AppModule } = await import('../dist/app.module.js');
+
+    const app = await NestFactory.create(
       AppModule,
       new ExpressAdapter(server),
-      { logger: ['error', 'warn'] },
+      {
+        logger: console, // Enable logging untuk debug
+      },
     );
 
-    nestApp.enableCors();
-    await nestApp.init();
-    app = nestApp;
+    app.enableCors();
+    await app.init();
+
+    cachedApp = app;
+    console.log('NestJS app initialized successfully');
+    return app;
+  } catch (error) {
+    console.error('Failed to initialize NestJS app:', error);
+    throw error;
   }
-  return server;
 }
 
-export default async (req: any, res: any) => {
+export default async (req, res) => {
   try {
-    const app = await bootstrap();
-    app(req, res);
+    await bootstrap();
+    return server(req, res);
   } catch (error) {
-    console.error('Bootstrap error:', error);
-    res.status(500).json({
-      error: 'Function initialization failed',
+    console.error('Request handler error:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
       message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 };
