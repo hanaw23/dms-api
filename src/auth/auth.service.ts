@@ -5,7 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { omit } from 'lodash';
 import { compare } from 'bcrypt';
-import { JwtConfig } from 'src/jwt.config';
+import { JwtConfig } from '../jwt.config';
 import { plainToClass } from 'class-transformer';
 import { UserResponseDto, UserAdminResponseDto } from './dto/user.dto';
 import { RegisterDto } from './dto/register.dto';
