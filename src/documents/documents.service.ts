@@ -284,14 +284,6 @@ export class DocumentsService {
     }
 
     // User: Cek status
-    if (document.status === DocumentStatus.pending_replace) {
-      return new ApiResponseDto(200, 'Tidak bisa remove saat pending replace', {
-        canRemove: false,
-        message:
-          'Tidak bisa menghapus dokumen dengan status pending_replace. Tunggu sampai status uploaded.',
-      });
-    }
-
     if (document.status === DocumentStatus.pending_remove) {
       return new ApiResponseDto(200, 'Dokumen sedang pending remove', {
         canRemove: false,
