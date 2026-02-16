@@ -305,7 +305,6 @@ export class DocumentsController {
       updateStatusDto,
       req.user.id,
       req.user.username,
-      req.user.role,
     );
   }
 

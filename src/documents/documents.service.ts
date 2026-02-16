@@ -428,14 +428,13 @@ export class DocumentsService {
 
   /**
    * Request Permission (Update Status)
-   * User klik button "Request Permission" → ubah status jadi pending
+   * User klik button "Request Permission" -> ubah semua status
    */
   async requestPermission(
     id: number,
     updateStatusDto: UpdateStatusDto,
     userId: number,
     username: string,
-    userRole: UserRole,
   ): Promise<ApiResponseDto<DocumentResponseDto>> {
     const existingDoc = await this.dbService.documents.findUnique({
       where: { id },
@@ -443,40 +442,6 @@ export class DocumentsService {
 
     if (!existingDoc) {
       throw new HttpException('Dokumen tidak ditemukan', HttpStatus.NOT_FOUND);
-    }
-
-    if (existingDoc.user_id !== userId) {
-      throw new HttpException(
-        'Anda tidak berhak mengubah status dokumen ini',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    // Admin tidak perlu request permission
-    if (userRole === UserRole.ADMIN) {
-      throw new HttpException(
-        'Admin tidak perlu mengajukan permission request',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    // Hanya bisa request dari status 'uploaded'
-    if (existingDoc.status !== DocumentStatus.uploaded) {
-      throw new HttpException(
-        `Tidak bisa request permission dari status ${existingDoc.status}. Status harus uploaded.`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    // Validasi status yang diajukan harus pending_replace atau pending_remove
-    if (
-      updateStatusDto.status !== DocumentStatus.pending_replace &&
-      updateStatusDto.status !== DocumentStatus.pending_remove
-    ) {
-      throw new HttpException(
-        'Status hanya bisa diubah ke pending_replace atau pending_remove',
-        HttpStatus.BAD_REQUEST,
-      );
     }
 
     const document = await this.dbService.documents.update({
