@@ -328,7 +328,7 @@ export class DocumentsService {
   async update(
     id: number,
     updateDto: UpdateDocumentDto,
-    file: Express.Multer.File | undefined, // ⬅️ TAMBAH parameter file
+    file: Express.Multer.File | undefined,
     userId: number,
     username: string,
     userRole: UserRole,
@@ -387,9 +387,9 @@ export class DocumentsService {
     }
 
     // USER: Cek status
-    if (existingDoc.status !== DocumentStatus.uploaded) {
+    if (existingDoc.status === DocumentStatus.pending_replace) {
       throw new HttpException(
-        `Tidak bisa mengubah dokumen dengan status ${existingDoc.status}. Tunggu sampai status uploaded.`,
+        `Tidak bisa mengubah dokumen dengan status ${existingDoc.status}. Silahkan Tunggu approval dari Admin.`,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -419,8 +419,6 @@ export class DocumentsService {
       if (!updateDto.name_doc) {
         updateData.name_doc = file.originalname;
       }
-
-      // TODO: Hapus file lama dari storage (optional)
     }
 
     const document = await this.dbService.documents.update({
@@ -542,13 +540,6 @@ export class DocumentsService {
     }
 
     // USER: Cek status
-    if (existingDoc.status === DocumentStatus.pending_replace) {
-      throw new HttpException(
-        'Tidak bisa menghapus dokumen dengan status pending_replace. Tunggu sampai status uploaded.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     if (existingDoc.status === DocumentStatus.pending_remove) {
       throw new HttpException(
         'Dokumen sedang dalam proses pending remove. Harap tunggu approval dari Admin.',
