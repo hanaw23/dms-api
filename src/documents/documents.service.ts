@@ -13,7 +13,7 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { PaginationDto } from 'src/common/dto/api-pagination.dto';
 import { plainToClass } from 'class-transformer';
 
-const BASE_PORT = process.env.PORT;
+const BASE_PORT = `http://localhost:${process.env.PORT}`;
 
 @Injectable()
 export class DocumentsService {
