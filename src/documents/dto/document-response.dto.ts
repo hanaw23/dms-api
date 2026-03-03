@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DocumentStatus } from '@prisma/client';
 import { Expose, Type } from 'class-transformer';
+import { DocumentFilesResponseDto } from '../../document-files/dto/document-files-response.dto';
 
 export class UserInDocumentDto {
   @ApiProperty({ example: 1 })
@@ -24,12 +25,6 @@ export class DocumentResponseDto {
   @ApiProperty({ example: 'Laporan Q1 2026.pdf' })
   @Expose()
   name_doc: string;
-
-  @ApiProperty({
-    example: 'http://localhost:3000/uploads/1739620000-laporan.pdf',
-  })
-  @Expose()
-  url_doc: string;
 
   @ApiProperty({ example: 'uploaded', enum: DocumentStatus })
   @Expose()
@@ -67,4 +62,9 @@ export class DocumentResponseDto {
   @ApiProperty({ example: 'jane_doe', nullable: true })
   @Expose()
   updated_by: string | null;
+
+  @ApiProperty({ type: () => [DocumentFilesResponseDto] })
+  @Expose()
+  @Type(() => DocumentFilesResponseDto)
+  files: DocumentFilesResponseDto[];
 }

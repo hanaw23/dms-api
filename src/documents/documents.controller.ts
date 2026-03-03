@@ -11,9 +11,10 @@ import {
   ParseIntPipe,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   Query,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import {
   ApiTags,
@@ -42,19 +43,22 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   /**
-   * Upload Document File
+   * Upload Document Files
    */
   @Post('upload')
-  @ApiOperation({ summary: 'Upload document file from computer' })
+  @ApiOperation({ summary: 'Upload multiple document files from computer' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Pilih file dari komputer',
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description: 'Pilih satu atau lebih file dari komputer',
         },
         name_doc: {
           type: 'string',
@@ -62,11 +66,11 @@ export class DocumentsController {
           example: 'Laporan Keuangan Q1',
         },
       },
-      required: ['file', 'name_doc'],
+      required: ['files', 'name_doc'],
     },
   })
   @UseInterceptors(
-    FileInterceptor('file', {
+    FilesInterceptor('files', 10, {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, callback) => {
@@ -75,23 +79,35 @@ export class DocumentsController {
         },
       }),
       limits: {
-        fileSize: 5 * 1024 * 1024, // Max 5MB
+        fileSize: 5 * 1024 * 1024,
       },
     }),
   )
-  @ApiResponse({ status: 201, description: 'File berhasil diupload' })
+  @ApiResponse({
+    status: 201,
+    description: 'Files berhasil diupload',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 201 },
+        message: { type: 'string', example: 'Dokumen berhasil diupload' },
+        data: { $ref: '#/components/schemas/DocumentResponseDto' },
+      },
+    },
+  })
   @ApiResponse({
     status: 400,
-    description: 'File atau nama dokumen tidak valid',
+    description: 'Files atau nama dokumen tidak valid',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+  async uploadFiles(
+    @UploadedFiles() files: Express.Multer.File[],
     @Body() createDto: CreateDocumentDto,
     @Request() req,
   ): Promise<ApiResponseDto<DocumentResponseDto>> {
-    return this.documentsService.uploadFile(
-      file,
+    // ✅ bukan array
+    return this.documentsService.uploadFiles(
+      files,
       createDto,
       req.user.id,
       req.user.username,
@@ -148,14 +164,10 @@ export class DocumentsController {
   }
 
   /**
-   * Check Update Permission (untuk tampilkan message di FE)
+   * Check Update Permission
    */
   @Get(':id/check-update-permission')
-  @ApiOperation({
-    summary: 'Check if user can update document',
-    description:
-      'Return message untuk FE: bisa langsung update atau perlu request permission',
-  })
+  @ApiOperation({ summary: 'Check if user can update document' })
   @ApiResponse({ status: 200, description: 'Permission check berhasil' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Dokumen tidak ditemukan' })
@@ -171,14 +183,10 @@ export class DocumentsController {
   }
 
   /**
-   * Check Remove Permission (untuk tampilkan message di FE)
+   * Check Remove Permission
    */
   @Get(':id/check-remove-permission')
-  @ApiOperation({
-    summary: 'Check if user can remove document',
-    description:
-      'Return message untuk FE: bisa langsung remove atau perlu request permission',
-  })
+  @ApiOperation({ summary: 'Check if user can remove document' })
   @ApiResponse({ status: 200, description: 'Permission check berhasil' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Dokumen tidak ditemukan' })
@@ -213,8 +221,7 @@ export class DocumentsController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update document name and/or file',
-    description:
-      'Admin: langsung update. User: perlu permission. Nama dan file keduanya optional.',
+    description: 'Admin: langsung update. User: perlu permission.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -244,7 +251,7 @@ export class DocumentsController {
         },
       }),
       limits: {
-        fileSize: 5 * 1024 * 1024, // Max 5MB
+        fileSize: 5 * 1024 * 1024,
       },
     }),
   )
@@ -261,7 +268,7 @@ export class DocumentsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() file: Express.Multer.File, // ⬅️ TAMBAH INI
+    @UploadedFile() file: Express.Multer.File,
     @Body() updateDto: UpdateDocumentDto,
     @Request() req,
   ): Promise<ApiResponseDto<DocumentResponseDto>> {
@@ -276,14 +283,10 @@ export class DocumentsController {
   }
 
   /**
-   * Request Permission (User klik button "Request Permission")
+   * Request Permission
    */
   @Patch(':id/request-permission')
-  @ApiOperation({
-    summary: 'Request permission to replace or remove document',
-    description:
-      'User request permission dengan mengubah status jadi pending_replace atau pending_remove',
-  })
+  @ApiOperation({ summary: 'Request permission to replace or remove document' })
   @ApiResponse({
     status: 200,
     description: 'Permission request berhasil dikirim',

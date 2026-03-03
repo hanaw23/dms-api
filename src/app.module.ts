@@ -6,6 +6,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { PermissionRequestsModule } from './permission-requests/permission-requests.module';
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
+import { DocumentFilesModule } from './document-files/document-files.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AppController } from './app.controller';
     AuthModule,
     DocumentsModule,
     PermissionRequestsModule,
+    DocumentFilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,7 +1,7 @@
 import { DocumentStatus, UserRole } from '@prisma/client';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ApiResponseDto } from 'src/common/dto/api-response.dto';
+import { ApiResponseDto } from '../common/dto/api-response.dto';
 import {
   PaginatedResponseDto,
   PaginationMeta,
@@ -18,16 +18,16 @@ export class DocumentsService {
   constructor(private dbService: PrismaService) {}
 
   /**
-   * Upload File dengan Logic Permission berdasarkan Role
+   * Upload Files dengan Logic Permission berdasarkan Role
    */
-  async uploadFile(
-    file: Express.Multer.File,
+  async uploadFiles(
+    files: Express.Multer.File[],
     createDto: CreateDocumentDto,
     userId: number,
     username: string,
     userRole: UserRole,
   ): Promise<ApiResponseDto<DocumentResponseDto>> {
-    if (!file) {
+    if (!files || files.length === 0) {
       throw new HttpException('File wajib diupload', HttpStatus.BAD_REQUEST);
     }
 
@@ -38,28 +38,28 @@ export class DocumentsService {
       );
     }
 
-    const fileUrl = `http://localhost:3000/uploads/${file.filename}`;
-
-    // Logic Permission berdasarkan Role
     const isAdmin = userRole === UserRole.ADMIN;
-    const permissions = {
-      is_remove_permission: isAdmin, // Admin: true, User: false
-      is_replace_permission: isAdmin, // Admin: true, User: false
-    };
 
+    // Buat 1 dokumen sekaligus dengan semua filesnya
     const document = await this.dbService.documents.create({
       data: {
-        name_doc: createDto.name_doc,
-        url_doc: fileUrl,
+        name_doc: createDto.name_doc.trim(),
         status: DocumentStatus.uploaded,
-        is_remove_permission: permissions.is_remove_permission,
-        is_replace_permission: permissions.is_replace_permission,
+        is_remove_permission: isAdmin,
+        is_replace_permission: isAdmin,
         user_id: userId,
         created_by: username,
         updated_by: username,
+        files: {
+          create: files.map((file) => ({
+            url_doc: `http://localhost:3000/uploads/${file.filename}`,
+            filename: file.originalname,
+          })),
+        },
       },
       include: {
         user: true,
+        files: true,
       },
     });
 
@@ -90,7 +90,7 @@ export class DocumentsService {
     const total = await this.dbService.documents.count({ where });
     const documents = await this.dbService.documents.findMany({
       where,
-      include: { user: true },
+      include: { user: true, files: true },
       orderBy: { created_at: 'desc' },
       skip,
       take: limit,
@@ -141,7 +141,7 @@ export class DocumentsService {
     const total = await this.dbService.documents.count({ where });
     const documents = await this.dbService.documents.findMany({
       where,
-      include: { user: true },
+      include: { user: true, files: true },
       orderBy: { created_at: 'desc' },
       skip,
       take: limit,
@@ -177,7 +177,7 @@ export class DocumentsService {
   async findOne(id: number): Promise<ApiResponseDto<DocumentResponseDto>> {
     const document = await this.dbService.documents.findUnique({
       where: { id },
-      include: { user: true },
+      include: { user: true, files: true },
     });
 
     if (!document) {
@@ -327,6 +327,7 @@ export class DocumentsService {
   ): Promise<ApiResponseDto<DocumentResponseDto>> {
     const existingDoc = await this.dbService.documents.findUnique({
       where: { id },
+      include: { files: true }, // include files
     });
 
     if (!existingDoc) {
@@ -340,74 +341,39 @@ export class DocumentsService {
       );
     }
 
-    // ADMIN: Langsung update tanpa cek permission
-    if (userRole === UserRole.ADMIN) {
-      const updateData: any = { updated_by: username };
-
-      // Update nama kalau diisi
-      if (updateDto.name_doc) {
-        updateData.name_doc = updateDto.name_doc;
+    // Permission check hanya untuk USER
+    if (userRole !== UserRole.ADMIN) {
+      if (existingDoc.status === DocumentStatus.pending_replace) {
+        throw new HttpException(
+          `Tidak bisa mengubah dokumen dengan status ${existingDoc.status}. Silahkan Tunggu approval dari Admin.`,
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
-      // Update file kalau ada
-      if (file) {
-        const fileUrl = `http://localhost:3000/uploads/${file.filename}`;
-        updateData.url_doc = fileUrl;
-
-        // Kalau nama tidak diisi, gunakan nama file baru
-        if (!updateDto.name_doc) {
-          updateData.name_doc = file.originalname;
-        }
-
-        // TODO: Hapus file lama dari storage (optional)
-        // const fs = require('fs');
-        // const oldFilename = existingDoc.url_doc.split('/').pop();
-        // fs.unlinkSync(`./uploads/${oldFilename}`);
+      if (!existingDoc.is_replace_permission) {
+        throw new HttpException(
+          'Anda tidak memiliki izin untuk mengubah dokumen ini. Silakan request permission ke Admin terlebih dahulu.',
+          HttpStatus.FORBIDDEN,
+        );
       }
-
-      const document = await this.dbService.documents.update({
-        where: { id },
-        data: updateData,
-        include: { user: true },
-      });
-
-      const documentDto = plainToClass(DocumentResponseDto, document, {
-        excludeExtraneousValues: true,
-      });
-
-      return new ApiResponseDto(200, 'Dokumen berhasil diupdate', documentDto);
     }
 
-    // USER: Cek status
-    if (existingDoc.status === DocumentStatus.pending_replace) {
-      throw new HttpException(
-        `Tidak bisa mengubah dokumen dengan status ${existingDoc.status}. Silahkan Tunggu approval dari Admin.`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    // USER: Cek permission
-    if (!existingDoc.is_replace_permission) {
-      throw new HttpException(
-        'Anda tidak memiliki izin untuk mengubah dokumen ini. Silakan request permission ke Admin terlebih dahulu.',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    // USER: Update document
+    // Build update data
     const updateData: any = { updated_by: username };
 
-    // Update nama kalau diisi
     if (updateDto.name_doc) {
       updateData.name_doc = updateDto.name_doc;
     }
 
-    // Update file kalau ada
+    // Jika ada file baru, tambah ke document_files
     if (file) {
-      const fileUrl = `http://localhost:3000/uploads/${file.filename}`;
-      updateData.url_doc = fileUrl;
+      updateData.files = {
+        create: {
+          url_doc: `http://localhost:3000/uploads/${file.filename}`,
+          filename: file.originalname,
+        },
+      };
 
-      // Kalau nama tidak diisi, gunakan nama file baru
       if (!updateDto.name_doc) {
         updateData.name_doc = file.originalname;
       }
@@ -416,7 +382,10 @@ export class DocumentsService {
     const document = await this.dbService.documents.update({
       where: { id },
       data: updateData,
-      include: { user: true },
+      include: {
+        user: true,
+        files: true,
+      },
     });
 
     const documentDto = plainToClass(DocumentResponseDto, document, {
@@ -450,7 +419,7 @@ export class DocumentsService {
         status: updateStatusDto.status,
         updated_by: username,
       },
-      include: { user: true },
+      include: { user: true, files: true },
     });
 
     const documentDto = plainToClass(DocumentResponseDto, document, {

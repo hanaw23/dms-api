@@ -174,7 +174,7 @@ export class PermissionRequestsService {
           select: {
             id: true,
             name_doc: true,
-            url_doc: true,
+            files: true,
             status: true,
           },
         },
@@ -236,7 +236,7 @@ export class PermissionRequestsService {
           select: {
             id: true,
             name_doc: true,
-            url_doc: true,
+            files: true,
             status: true,
           },
         },
@@ -359,7 +359,7 @@ export class PermissionRequestsService {
             select: {
               id: true,
               name_doc: true,
-              url_doc: true,
+              files: true,
               status: true,
             },
           },
@@ -447,7 +447,7 @@ export class PermissionRequestsService {
           select: {
             id: true,
             name_doc: true,
-            url_doc: true,
+            files: true,
             status: true,
           },
         },

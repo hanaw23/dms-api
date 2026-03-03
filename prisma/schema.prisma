@@ -57,7 +57,6 @@ model Users {
 model Documents {
   id                    Int            @id @default(autoincrement())
   name_doc              String
-  url_doc               String
   status                DocumentStatus @default(uploaded)
   is_remove_permission  Boolean        @default(false)
   is_replace_permission Boolean        @default(false)
@@ -68,8 +67,20 @@ model Documents {
   user_id               Int
   user                  Users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
   permissionRequests    PermissionRequests[]
+  files                 DocumentFiles[]
 
   @@map("documents")
+}
+
+model DocumentFiles {
+  id          Int       @id @default(autoincrement())
+  url_doc     String
+  filename    String
+  created_at  DateTime  @default(now())
+  document_id Int
+  document    Documents @relation(fields: [document_id], references: [id], onDelete: Cascade)
+
+  @@map("document_files")
 }
 
 model PermissionRequests {
