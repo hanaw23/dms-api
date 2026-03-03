@@ -13,6 +13,8 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { PaginationDto } from 'src/common/dto/api-pagination.dto';
 import { plainToClass } from 'class-transformer';
 
+const BASE_PORT = process.env.PORT;
+
 @Injectable()
 export class DocumentsService {
   constructor(private dbService: PrismaService) {}
@@ -52,7 +54,7 @@ export class DocumentsService {
         updated_by: username,
         files: {
           create: files.map((file) => ({
-            url_doc: `http://localhost:3000/uploads/${file.filename}`,
+            url_doc: `${BASE_PORT}/uploads/${file.filename}`,
             filename: file.originalname,
           })),
         },
@@ -369,7 +371,7 @@ export class DocumentsService {
     if (file) {
       updateData.files = {
         create: {
-          url_doc: `http://localhost:3000/uploads/${file.filename}`,
+          url_doc: `${BASE_PORT}/uploads/${file.filename}`,
           filename: file.originalname,
         },
       };
