@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -32,14 +33,29 @@ async function bootstrap() {
     }),
   );
 
-  // Static Files
-  const uploadsPath = join(process.cwd(), 'uploads');
+  // CORS dulu sebelum semua
+  const cors = {
+    origin: ['http://localhost:3000', 'http://localhost'],
+    methods: 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    credentials: true,
+    allowedHeaders: ['*'],
+  };
+  app.enableCors(cors);
 
-  app.useStaticAssets(uploadsPath, {
+  // Middleware CORS untuk /uploads
+  app.use('/uploads', (req: Request, res: Response, next: NextFunction) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+  });
+  // Static Files — cukup sekali
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
   });
 
-  // Swagger Configuration
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('API Documentation for Your App')
@@ -77,17 +93,6 @@ async function bootstrap() {
   });
   SwaggerModule.setup('api-docs', app, document);
 
-  const cors = {
-    origin: ['http://localhost:3000', 'http://localhost', '*'],
-    methods: 'GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS',
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-    credentials: true,
-    allowedHeaders: ['*'],
-  };
-
-  app.enableCors(cors);
-
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? '8000');
 }
 bootstrap();

@@ -219,30 +219,9 @@ export class DocumentsController {
    * Update Document (Nama dan/atau File)
    */
   @Patch(':id')
-  @ApiOperation({
-    summary: 'Update document name and/or file',
-    description: 'Admin: langsung update. User: perlu permission.',
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'File baru (optional)',
-        },
-        name_doc: {
-          type: 'string',
-          description: 'Nama dokumen baru (optional)',
-          example: 'Laporan Q1 2026 (Updated)',
-        },
-      },
-    },
-  })
   @UseInterceptors(
-    FileInterceptor('file', {
+    FilesInterceptor('files', 10, {
+      // ganti FileInterceptor -> FilesInterceptor
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, callback) => {
@@ -250,32 +229,19 @@ export class DocumentsController {
           callback(null, uniqueName);
         },
       }),
-      limits: {
-        fileSize: 5 * 1024 * 1024,
-      },
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  @ApiResponse({
-    status: 200,
-    description: 'Dokumen berhasil diupdate',
-    type: DocumentResponseDto,
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - tidak punya permission',
-  })
-  @ApiResponse({ status: 404, description: 'Dokumen tidak ditemukan' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[], // ganti UploadedFile -> UploadedFiles
     @Body() updateDto: UpdateDocumentDto,
     @Request() req,
   ): Promise<ApiResponseDto<DocumentResponseDto>> {
     return this.documentsService.update(
       id,
       updateDto,
-      file,
+      files, // kirim array
       req.user.id,
       req.user.username,
       req.user.role,

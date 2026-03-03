@@ -13,7 +13,7 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { PaginationDto } from 'src/common/dto/api-pagination.dto';
 import { plainToClass } from 'class-transformer';
 
-const BASE_PORT = `http://localhost:${process.env.PORT}`;
+const BASE_URL = `${process.env.BASE_URL}`;
 
 @Injectable()
 export class DocumentsService {
@@ -54,7 +54,7 @@ export class DocumentsService {
         updated_by: username,
         files: {
           create: files.map((file) => ({
-            url_doc: `${BASE_PORT}/uploads/${file.filename}`,
+            url_doc: `${BASE_URL}/uploads/${file.filename}`,
             filename: file.originalname,
           })),
         },
@@ -322,14 +322,14 @@ export class DocumentsService {
   async update(
     id: number,
     updateDto: UpdateDocumentDto,
-    file: Express.Multer.File | undefined,
+    files: Express.Multer.File[],
     userId: number,
     username: string,
     userRole: UserRole,
   ): Promise<ApiResponseDto<DocumentResponseDto>> {
     const existingDoc = await this.dbService.documents.findUnique({
       where: { id },
-      include: { files: true }, // include files
+      include: { files: true },
     });
 
     if (!existingDoc) {
@@ -368,17 +368,20 @@ export class DocumentsService {
     }
 
     // Jika ada file baru, tambah ke document_files
-    if (file) {
+    if (files && files.length > 0) {
       updateData.files = {
-        create: {
-          url_doc: `${BASE_PORT}/uploads/${file.filename}`,
+        create: files.map((file) => ({
+          url_doc: `${BASE_URL}/uploads/${file.filename}`,
           filename: file.originalname,
-        },
+        })),
       };
+    }
 
-      if (!updateDto.name_doc) {
-        updateData.name_doc = file.originalname;
-      }
+    // Hapus files yang di-delete user
+    if (updateDto.deleted_file_ids && updateDto.deleted_file_ids?.length > 0) {
+      await this.dbService.documentFiles.deleteMany({
+        where: { id: { in: updateDto.deleted_file_ids } },
+      });
     }
 
     const document = await this.dbService.documents.update({

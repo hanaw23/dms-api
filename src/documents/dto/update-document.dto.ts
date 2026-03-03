@@ -1,13 +1,19 @@
+import { IsOptional, IsString, IsArray, IsNumber } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional } from 'class-validator';
 
 export class UpdateDocumentDto {
-  @ApiProperty({
-    example: 'Laporan Q1 2026 (Updated)',
-    description: 'Nama dokumen baru (optional)',
-    required: false,
-  })
   @IsOptional()
   @IsString()
+  @ApiProperty({ required: false })
   name_doc?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value,
+  )
+  @ApiProperty({ required: false, example: [1, 2] })
+  deleted_file_ids?: number[];
 }
